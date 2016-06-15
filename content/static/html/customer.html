@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Welcome to Customer Service</title>
+        <link href="styles/chat.css" rel="stylesheet" type="text/css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.1.0/react-dom.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    </head>
+    <body>
+        <div id="app-container">
+        </div>
+        <script type="text/babel">
+            /**
+            * customer.html
+            *
+            * @file provides the client-side chat interface for customer use.
+            * @author Mark Betz <betz.mark@gmail.com>
+            */
+
+            var host = "130.211.186.152";
+
+            /** React class representing one message in chat */
+            var ChatMessage = React.createClass({
+                render: function() {
+                    return (
+                        <div className="chatMessage">
+                            <div className="chatMessageAuthor">
+                                {this.props.author}
+                            </div>
+                            <div className="chatMessageText">
+                                {this.props.text}
+                            </div>
+                        </div>
+                    );
+                }
+            })
+
+            /** React class representing a list of chat messages */
+            var ChatList = React.createClass({
+                /** These two functions keep the chat list scrolled to the
+                * bottom when new content is added and it rerenders.
+                */
+                componentWillUpdate: function() {
+                    const node = ReactDOM.findDOMNode(this);
+                    this.shouldScrollBottom = (Math.ceil(node.scrollTop) + node.clientHeight) >= node.scrollHeight;
+                },
+                componentDidUpdate: function() {
+                    if (this.shouldScrollBottom) {
+                        const node = ReactDOM.findDOMNode(this);
+                        node.scrollTop = node.scrollHeight;
+                    }
+                },
+                render: function() {
+                    var messages = this.props.messages.map(function(message) {
+                        return (
+                            <ChatMessage key={message.id} author={message.author} text={message.text} />
+                        );
+                    });
+                   return(
+                        <div className="chatList">
+                            {messages}
+                        </div>
+                    );
+                }
+            })
+
+            /** React class implementing the message input form */
+            var ChatSendText = React.createClass({
+                getInitialState: function() {
+                    return {text:''};
+                },
+                handleTextChange: function(ev) {
+                    this.setState({text: ev.target.value});
+                },
+                sendMessage: function() {
+                    var text = this.state.text.trim();
+                    if (text != '') {
+                        var sender = this.props.sender;
+                        this.setState({text:''})
+                        this.props.onSendMessage(text);
+                    }
+                },
+                handleSubmit: function(ev) {
+                    ev.preventDefault();
+                    this.sendMessage();
+                },
+                componentDidMount: function() {
+                    $('#chatSendTextArea').keypress(function(e){
+                        if (e.which == 13 && !e.shiftKey) {
+                            e.preventDefault();
+                            if (this.props.enabled) {
+                                this.sendMessage();
+                            }
+                        }
+                    }.bind(this));
+                    ReactDOM.findDOMNode(this.refs.chatInput).focus();
+                },
+                render: function() {
+                    return (
+                        <form id="chatSendTextForm" className="chatSendText" onSubmit={this.handleSubmit}>
+                            <textarea id="chatSendTextArea" rows="5"
+                                ref="chatInput"
+                                placeholder="Type text here"
+                                value={this.state.text}
+                                onChange={this.handleTextChange}
+                            />
+                            <input type="submit" value="Send" disabled={!this.props.enabled} />
+                        </form>
+                    );
+                }
+            })
+
+            /** React class implementing the initial name entry form */
+            var ChatSetName = React.createClass({
+                getInitialState: function() {
+                    return {name:''};
+                },
+                handleNameChange: function(ev) {
+                    this.setState({name: ev.target.value});
+                },
+                handleSubmit: function(ev) {
+                    ev.preventDefault();
+                    var name = this.state.name.trim();
+                    if (name === '') {
+                        name = this.props.defaultName;
+                    }
+                    this.props.onNameSet(name);
+                },
+                componentDidMount: function() {
+                    ReactDOM.findDOMNode(this.refs.nameInput).focus();
+                },
+                render: function() {
+                    return (
+                        <form className="chatSetName" onSubmit={this.handleSubmit}>
+                            <input type="text"
+                                ref="nameInput"
+                                placeholder={this.props.defaultName}
+                                value={this.state.name}
+                                onChange={this.handleNameChange}
+                            />
+                            <input type="submit" value="Begin" />
+                        </form>
+                    );
+                }
+            })
+
+            /** React class representing the main chat window
+            *
+            * Owns the messages list and handles the websocket and message traffic
+            */
+            var ChatWindow = React.createClass({
+                getInitialState: function() {
+                    return {
+                        chatting: false,
+                        connected: false,
+                        waiting: false,
+                        sender:'',
+                        operator: '',
+                        socket: null,
+                        data: []
+                    };
+                },
+               /** Handles all state mutations in respose to status messages */
+                statusUpdate: function(message) {
+                    this.setState(function(prevState, currProps) {
+                        var isWaiting = prevState.waiting;
+                        var isConnected = prevState.connected;
+                        var newData = prevState.data.slice(0);
+                        var operatorName = '';
+                        if (message.status === 'queued') {
+                            if (!isWaiting) {
+                                newData = newData.concat([{id: 2, author: "Admin", text: "All operators are currently assisting other customers. Your chat session will begin shortly."}]);
+                                isWaiting = true;
+                            }
+                            newData = newData.concat([{id: Date.now(), author: "Admin", text: "Your position in the chat queue is: " + message.pos}]);
+                        } else if (message.status === 'unavailable') {
+                            newData = newData.concat([{id: 3, author: "Admin", text: "We're sorry but no operators are currently available for live chat. Please email your inquiry to service@service.com"}]);
+                        } else if (message.status === 'connected') {
+                            newData = newData.concat([{id: 4, author: "Admin", text: "Chatting with operator " + message.operator + "."}]);
+                            isConnected = true;
+                            isWaiting = false;
+                            operatorName = message.operator;
+                        }
+                        return {
+                            waiting: isWaiting,
+                            connected: isConnected,
+                            operator: operatorName,
+                            data: newData
+                        };
+                    });
+                },
+
+                /** Copies a received message into the message list */
+                messageReceived: function(message_text) {
+                    this.setState({
+                        data: this.state.data.concat([{id: Date.now(), author:this.state.operator, text:message_text}])
+                    });
+                },
+
+                /** Connects to the service and sets up handlers for the socket events */
+                connectToService: function() {
+                    var ws = new WebSocket('ws://' + host + '/chat/?name=' + this.state.sender);
+                    ws.onopen = function() {
+                        console.log('websocket opened to ws://' + host + '/chat/');
+                        this.setState({socket: ws});
+                    }.bind(this);
+                    ws.onmessage = function(ev) {
+                        var message = JSON.parse(ev.data);
+                        if (message.type === 'status') {
+                            this.statusUpdate(message);
+                        } else if (message.type === 'message') {
+                            this.messageReceived(message.text);
+                        } else {
+                            console.log("warning: unknown message type: " + message.type);
+                        }
+                    }.bind(this);
+                    ws.onclose = function(ev) {
+                        console.log("websocket closed, code: " + ev.code + ", reason: " + ev.reason)
+                        this.setState(function(prevState, currProps) {
+                            return this.getInitialState();
+                        });
+                    }.bind(this);
+                    ws.onerror = function(ev) {
+                        console.log("error: websocket error")
+                    }
+                },
+
+                /** Sends a message to the websocket and copies it into the messages list */
+                sendMessage: function(message_text) {
+                    var ws = this.state.socket;
+                    ws.send('{"type": "message", "text": "' + message_text + '"}');
+                    this.setState({
+                        data: this.state.data.concat([{id: Date.now(), author:this.state.sender, text:message_text}])
+                    });
+                },
+
+                /** Sets up chat when the user clicks the "Begin" button */
+                beginChat: function(name) {
+                    this.setState(function(prevState, currProps) {
+                        return {
+                            chatting: true,
+                            sender: name,
+                            data: [{id:1, author: "Admin", text: "Connecting to Live Chat..."}]
+                        };
+                    }, function() {
+                        this.connectToService();
+                    });
+                },
+
+                /** Displays the initial welcome message after the component mounts */
+                componentDidMount: function() {
+                    this.setState({
+                        sender: this.props.defaultSender,
+                        data: [{id:0, author: "Admin", text: "Welcome to customer service. Please enter your name below and tap the button to chat live with one of our representatives."}]
+                    });
+                },
+                render: function() {
+                    return (
+                        <div className="chatWindow">
+                            <div className="chatTitle">Customer Service Live Chat</div>
+                            <ChatList messages={this.state.data} />
+                            {this.state.chatting ? null : <ChatSetName onNameSet={this.beginChat} defaultName={this.props.defaultSender} /> }
+                            {this.state.chatting ? <ChatSendText enabled={this.state.connected} onSendMessage={this.sendMessage} /> : null }
+                        </div>
+                    );
+                }
+            });
+
+            /** Entrypoint */
+            ReactDOM.render(
+                <ChatWindow defaultSender="Visitor" />,
+                document.getElementById('app-container')
+            );
+        </script>
+    </body>
+</html>

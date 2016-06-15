@@ -1,0 +1,23 @@
+FROM alpine:latest
+
+MAINTAINER Mark Betz <betz.mark@gmail.com>
+
+WORKDIR /usr/local/bin
+
+ADD requirements.txt /usr/local/bin/content/
+
+RUN apk upgrade --update && \
+    apk add --update --no-cache bash && \
+    apk add --update --no-cache python && \
+    python -m ensurepip && \
+    rm -r /usr/lib/python*/ensurepip && \
+    pip install --upgrade pip setuptools && \
+    pip install -r content/requirements.txt && \
+    rm content/requirements.txt && \
+    rm -r /root/.cache
+
+ADD content/ /usr/local/bin/content/
+
+WORKDIR /usr/local/bin/content
+
+ENTRYPOINT ["python", "service.py"]

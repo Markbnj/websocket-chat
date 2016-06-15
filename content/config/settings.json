@@ -1,0 +1,5 @@
+{
+    "listenOnIP": "0.0.0.0",
+    "listenOnPort": 8088,
+    "logLevel": "DEBUG"
+}

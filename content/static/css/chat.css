@@ -1,0 +1,156 @@
+/* chat client styles */
+
+input[type="text"] {
+    margin: 0;
+    padding: 2px;
+    float: left;
+    font-family: sans-serif;
+    appearance: none;
+    box-shadow: none;
+    border-radius: none;
+}
+
+textarea {
+    resize: none;
+    font-family: sans-serif;
+    appearance: none;
+    box-shadow: none;
+    border-radius: none;
+}
+
+input[type="submit"] {
+    float: right;
+    margin: 0;
+    padding: 10px 25px;
+    font-family: sans-serif;
+    line-height: 1.8;
+    appearance: none;
+    box-shadow: none;
+    border-radius: 0;
+    color: #fff;
+    background-color: #6496c8;
+    text-shadow: -1px 1px #417cb8;
+    border: none;
+}
+
+.chatWindow {
+    width: 600px;
+    height: 800px;
+    padding-top: 10px;
+    padding-left: 10px;
+    background: #0059b3;
+    font-family: sans-serif;
+    font-size: 18px;
+}
+
+.operatorChatWindow {
+    width: 800px;
+    height: 800px;
+    padding-top: 10px;
+    padding-left: 10px;
+    background: #0059b3;
+    font-family: sans-serif;
+    font-size: 18px;
+}
+
+.chatTitle {
+    height: 30px;
+    margin-top:5px;
+    color: white;
+    font-weight: bolder;
+}
+
+.chatList {
+    width: 585px;
+    height: 650px;
+    background: white;
+    border: solid thin grey;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.queueList {
+    float: right;
+    margin-right: 10px;
+    width: 185px;
+    height: 620px;
+}
+
+.queueListTitle {
+    color: white;
+    font-size: 18px;
+}
+
+.queueListContainer {
+    padding-top: 5px;
+    padding-left: 5px;
+    margin-top: 5px;
+    margin-right: 10px;
+    background: white;
+    width: 180px;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-size: 16px;
+}
+
+.queueName {
+    margin: 0;
+}
+
+.chatMessage {
+    width: 570px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 5px;
+}
+
+.chatMessageAuthor {
+    width: 100px;
+    float: left;
+    color: blue;
+    font-weight: bolder;
+    overflow: hidden;
+}
+
+.chatMessageText {
+    margin-left: 110px;
+    width: 465px;
+    display: block;
+}
+
+.chatSendText {
+    width: 585px;
+    height: 90px;
+    margin-top: 10px;
+}
+
+.chatSendText input[type="submit"] {
+    width:100px;
+    height: 86px;
+    font-size: 22px;
+}
+
+.chatSendText textarea {
+    width: 470px;
+    height: 80px;
+    font-size: 18px;
+}
+.chatSetName {
+    width: 585px;
+    height: 90px;
+    margin-top: 10px;
+}
+
+.chatSetName input[type="text"] {
+    width: 470px;
+    height: 80px;
+    font-size: 28px;
+}
+
+.chatSetName input[type="submit"] {
+    width: 100px;
+    height: 86px;
+    font-size: 22px;
+}
+

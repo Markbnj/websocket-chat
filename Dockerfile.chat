@@ -1,0 +1,23 @@
+FROM alpine:latest
+
+MAINTAINER Mark Betz <betz.mark@gmail.com>
+
+WORKDIR /usr/local/bin
+
+ADD requirements.txt /usr/local/bin/chat/
+
+RUN apk upgrade --update && \
+    apk add --update --no-cache bash && \
+    apk add --update --no-cache python && \
+    python -m ensurepip && \
+    rm -r /usr/lib/python*/ensurepip && \
+    pip install --upgrade pip setuptools && \
+    pip install -r chat/requirements.txt && \
+    rm chat/requirements.txt && \
+    rm -r /root/.cache
+
+ADD chat/ /usr/local/bin/chat/
+
+WORKDIR /usr/local/bin/chat
+
+ENTRYPOINT ["python", "service.py"]
