@@ -20,7 +20,7 @@
             * @author Mark Betz <betz.mark@gmail.com>
             */
 
-            var host = "130.211.186.152";
+            var host = "localhost:8080";
 
             /** React class representing one message in chat */
             var ChatMessage = React.createClass({
@@ -219,9 +219,11 @@
                     }.bind(this);
                     ws.onclose = function(ev) {
                         console.log("websocket closed, code: " + ev.code + ", reason: " + ev.reason)
-                        this.setState(function(prevState, currProps) {
-                            return this.getInitialState();
-                        });
+                        if (ev.code != 1013) {
+                            this.setState(function(prevState, currProps) {
+                                return this.getInitialState();
+                            });
+                        }
                     }.bind(this);
                     ws.onerror = function(ev) {
                         console.log("error: websocket error")
